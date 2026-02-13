@@ -1,0 +1,5 @@
+{
+  "name": "SmartNaukari",
+  "description": "An intelligent resume analyzer that uses Google Gemini to evaluate resumes in PDF, Image, or Word formats and provides actionable feedback.",
+  "requestFramePermissions": []
+}
