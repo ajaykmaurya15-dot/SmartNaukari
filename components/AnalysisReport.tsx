@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AnalysisResult } from '../types';
+import { AnalysisResult } from '../types.ts';
 import { CheckCircle2, AlertCircle, Award, BookOpen, Briefcase, Zap, Search } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
 
@@ -68,7 +68,6 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, onReset 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Col: Summary & Skills */}
         <div className="lg:col-span-2 space-y-8">
           <section className="glass-panel p-8 rounded-3xl shadow-sm border border-slate-200">
             <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -92,7 +91,6 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, onReset 
             </div>
             <div className="bg-rose-50/50 border border-rose-100 rounded-3xl p-6">
               <h4 className="flex items-center gap-2 text-rose-700 font-bold mb-4">
-                {/* Fixed: Added missing AlertCircle import from lucide-react */}
                 <AlertCircle size={20} /> Missing Elements
               </h4>
               <ul className="space-y-3">
@@ -106,7 +104,6 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, onReset 
           </div>
         </div>
 
-        {/* Right Col: Action Plan */}
         <div className="space-y-6">
           <section className="bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
             <Zap className="absolute -top-4 -right-4 w-24 h-24 text-white/5 rotate-12" />

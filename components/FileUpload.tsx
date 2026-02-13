@@ -1,6 +1,7 @@
+
 import React, { useRef, useState } from 'react';
 import { UploadCloud, FileText, Image as ImageIcon, FileType } from 'lucide-react';
-import { getFileType } from '../services/fileHelper';
+import { getFileType } from '../services/fileHelper.ts';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;

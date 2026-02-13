@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { FileUpload } from './components/FileUpload';
-import { AnalysisReport } from './components/AnalysisReport';
-import { analyzeResume } from './services/geminiService';
-import { readFileAsBase64, extractTextFromDocx, extractTextFromPdf, getFileType } from './services/fileHelper';
-import { AppState, AnalysisResult, FileData } from './types';
+import { FileUpload } from './components/FileUpload.tsx';
+import { AnalysisReport } from './components/AnalysisReport.tsx';
+import { analyzeResume } from './services/geminiService.ts';
+import { readFileAsBase64, extractTextFromDocx, extractTextFromPdf, getFileType } from './services/fileHelper.ts';
+import { AppState, AnalysisResult, FileData } from './types.ts';
 import { FileText, Loader2, Sparkles, CheckCircle, Zap, AlertTriangle, Briefcase } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -98,7 +98,6 @@ const App: React.FC = () => {
       <main>
         {appState === AppState.IDLE && (
           <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-10">
-            {/* File Upload Area */}
             <div className="lg:col-span-3 space-y-6">
               <FileUpload onFileSelect={handleFileSelect} isAnalyzing={false} />
               
@@ -116,7 +115,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Job Description Sidebar */}
             <div className="lg:col-span-2">
               <div className="glass-panel p-6 rounded-3xl border border-slate-200 h-full flex flex-col">
                 <div className="flex items-center gap-2 mb-4 text-slate-700">
@@ -150,7 +148,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <h2 className="text-3xl font-black text-slate-900 mb-2">Analyzing Resume</h2>
-              <p className="text-indigo-500 font-medium tracking-wide animate-pulse h-6">
+              <p className="text-indigo-500 font-medium tracking-wide animate-pulse h-6 text-center">
                 {loadingMessages[loadingStep]}
               </p>
             </div>

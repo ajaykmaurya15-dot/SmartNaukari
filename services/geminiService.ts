@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { AnalysisResult } from "../types";
+import { AnalysisResult } from "../types.ts";
 
 export const analyzeResume = async (
   base64Data: string | undefined,
@@ -42,7 +42,6 @@ export const analyzeResume = async (
 
   try {
     let parts;
-    // Prepare message parts based on input modality
     if (mode === 'docx' && textData) {
       parts = [{ text: promptText }, { text: `RESUME TEXT:\n${textData}` }];
     } else if (base64Data) {
@@ -54,7 +53,6 @@ export const analyzeResume = async (
         throw new Error("No valid data provided");
     }
 
-    // Always use ai.models.generateContent to query GenAI with both the model name and prompt
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: { parts },
@@ -66,7 +64,6 @@ export const analyzeResume = async (
     });
 
     if (response.text) {
-      // Use the text property directly and trim whitespace as recommended
       return JSON.parse(response.text.trim()) as AnalysisResult;
     } else {
         throw new Error("Analysis failed to generate text");
