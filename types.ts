@@ -1,11 +1,14 @@
+
 export interface AnalysisResult {
   score: number;
+  matchScore?: number;
   summary: string;
   strengths: string[];
   weaknesses: string[];
   improvements: string[];
   skillsFound: string[];
   roleMatch?: string;
+  keywordGaps?: string[];
 }
 
 export interface FileData {

@@ -1,12 +1,14 @@
+
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Handle ESM default export inconsistencies (common with pdfjs-dist via CDNs)
 const pdfjs = (pdfjsLib as any).default ?? pdfjsLib;
 
-// Initialize the PDF.js worker
+// Initialize the PDF.js worker using unpkg for reliable raw script loading.
+// This specifically resolves the 'importScripts' NetworkError seen with esm.sh workers.
 if (pdfjs.GlobalWorkerOptions) {
-  pdfjs.GlobalWorkerOptions.workerSrc = 'https://esm.sh/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  pdfjs.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 }
 
 export const readFileAsBase64 = (file: File): Promise<string> => {
@@ -35,20 +37,35 @@ export const extractTextFromDocx = async (file: File): Promise<string> => {
 export const extractTextFromPdf = async (file: File): Promise<string> => {
   const arrayBuffer = await file.arrayBuffer();
   
-  // Use the resolved pdfjs object which contains getDocument
-  const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-  const pdf = await loadingTask.promise;
-  
-  let fullText = '';
+  try {
+    const loadingTask = pdfjs.getDocument({ 
+      data: arrayBuffer,
+      // Use standard fonts and disable specialized font loading to reduce external dependencies
+      disableFontFace: true,
+      verbosity: 0 
+    });
+    
+    const pdf = await loadingTask.promise;
+    let fullText = '';
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items.map((item: any) => item.str).join(' ');
-    fullText += pageText + '\n';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => (item as any).str).join(' ');
+      fullText += pageText + '\n';
+    }
+
+    return fullText;
+  } catch (error: any) {
+    console.error("PDF Parsing error:", error);
+    
+    // Catch worker initialization failures specifically
+    if (error.message?.includes('WorkerMessageHandler') || error.name === 'NetworkError') {
+      throw new Error("The PDF engine failed to load properly. Please ensure you have a stable internet connection and try refreshing the page.");
+    }
+    
+    throw new Error("Could not extract text from this PDF. It might be a scanned image or password-protected.");
   }
-
-  return fullText;
 };
 
 export const getFileType = (file: File): 'pdf' | 'image' | 'docx' | null => {

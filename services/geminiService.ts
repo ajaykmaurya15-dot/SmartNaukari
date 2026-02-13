@@ -1,90 +1,63 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult } from "../types";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const analyzeResume = async (
   base64Data: string | undefined,
   textData: string | undefined,
   mimeType: string,
-  mode: 'pdf' | 'image' | 'docx'
+  mode: 'pdf' | 'image' | 'docx',
+  jobDescription?: string
 ): Promise<AnalysisResult> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Define the structured output schema
   const responseSchema = {
     type: Type.OBJECT,
     properties: {
-      score: { type: Type.NUMBER, description: "A score from 0 to 100 representing the quality of the resume." },
-      summary: { type: Type.STRING, description: "A brief professional summary of the resume's content." },
-      strengths: { 
-        type: Type.ARRAY, 
-        items: { type: Type.STRING },
-        description: "List of 3-5 strong points about the resume." 
-      },
-      weaknesses: { 
-        type: Type.ARRAY, 
-        items: { type: Type.STRING },
-        description: "List of 3-5 weak points or missing elements." 
-      },
-      improvements: { 
-        type: Type.ARRAY, 
-        items: { type: Type.STRING },
-        description: "Specific actionable advice to improve the resume." 
-      },
-      skillsFound: { 
-        type: Type.ARRAY, 
-        items: { type: Type.STRING },
-        description: "Key technical and soft skills identified in the document." 
-      },
+      score: { type: Type.NUMBER, description: "General resume quality score (0-100)." },
+      matchScore: { type: Type.NUMBER, description: "Match percentage (0-100) if a JD was provided, otherwise 0." },
+      summary: { type: Type.STRING, description: "A brief professional summary." },
+      strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+      weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
+      improvements: { type: Type.ARRAY, items: { type: Type.STRING } },
+      skillsFound: { type: Type.ARRAY, items: { type: Type.STRING } },
+      keywordGaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Keywords from JD missing in resume." },
+      roleMatch: { type: Type.STRING, description: "The likely job title this resume is targetting." },
     },
     required: ["score", "summary", "strengths", "weaknesses", "improvements", "skillsFound"],
   };
 
-  // Using gemini-3-flash-preview as per the latest guidelines for reliable text and multimodal tasks.
-  // Previous model IDs (gemini-2.0-flash-exp) were causing 404 errors.
-  const modelId = 'gemini-3-flash-preview'; 
-
   const promptText = `
-    You are a world-class Senior Technical Recruiter and Resume Expert. 
-    Analyze the attached resume. 
-    Critique it based on formatting, clarity, impact, use of action verbs, quantification of results, and overall professionalism.
-    Be strict but constructive. 
-    If the input is text-only, judge based on content structure and clarity.
+    You are a Senior Technical Recruiter. Analyze the provided resume.
+    ${jobDescription ? `COMPARE IT AGAINST THIS JOB DESCRIPTION: \n"${jobDescription}"` : 'Evaluate it based on general industry standards for professional resumes.'}
     
-    IMPORTANT: Provide specific, actionable feedback that the candidate can use to improve their resume immediately.
+    CRITIQUE CRITERIA:
+    1. Clarity and Formatting.
+    2. Quantifiable Impact (metrics, results).
+    3. Keyword optimization ${jobDescription ? 'relative to the provided JD' : ''}.
+    4. Action Verbs and Professionalism.
+
+    If a Job Description is provided, calculate the 'matchScore' based on how well the skills and experience align.
   `;
 
   try {
-    let contents;
-
+    let parts;
+    // Prepare message parts based on input modality
     if (mode === 'docx' && textData) {
-      // For DOCX, we send extracted text
-      contents = [
-        { role: 'user', parts: [{ text: promptText }, { text: `RESUME TEXT CONTENT:\n\n${textData}` }] }
-      ];
+      parts = [{ text: promptText }, { text: `RESUME TEXT:\n${textData}` }];
     } else if (base64Data) {
-      // For PDF and Images, we send base64 inline data
-      contents = [
-        {
-          role: 'user',
-          parts: [
-            { text: promptText },
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: base64Data
-              }
-            }
-          ]
-        }
+      parts = [
+        { text: promptText },
+        { inlineData: { mimeType, data: base64Data } }
       ];
     } else {
-        throw new Error("No valid data provided for analysis");
+        throw new Error("No valid data provided");
     }
 
+    // Always use ai.models.generateContent to query GenAI with both the model name and prompt
     const response = await ai.models.generateContent({
-      model: modelId,
-      contents: contents,
+      model: 'gemini-3-flash-preview',
+      contents: { parts },
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
@@ -93,13 +66,13 @@ export const analyzeResume = async (
     });
 
     if (response.text) {
-      return JSON.parse(response.text) as AnalysisResult;
+      // Use the text property directly and trim whitespace as recommended
+      return JSON.parse(response.text.trim()) as AnalysisResult;
     } else {
-        throw new Error("Empty response from Gemini");
+        throw new Error("Analysis failed to generate text");
     }
-
   } catch (error) {
-    console.error("Gemini Analysis Error:", error);
+    console.error("Gemini Error:", error);
     throw error;
   }
 };

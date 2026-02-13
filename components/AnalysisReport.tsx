@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { AnalysisResult } from '../types';
-import { CheckCircle2, XCircle, AlertCircle, Award, Target, BookOpen } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Award, BookOpen, Briefcase, Zap, Search } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
 
 interface AnalysisReportProps {
@@ -10,150 +11,145 @@ interface AnalysisReportProps {
 
 export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, onReset }) => {
   const getScoreColor = (score: number) => {
-    if (score >= 80) return '#10b981'; // Emerald 500
-    if (score >= 60) return '#f59e0b'; // Amber 500
-    return '#ef4444'; // Red 500
+    if (score >= 80) return '#10b981';
+    if (score >= 60) return '#f59e0b';
+    return '#ef4444';
   };
 
-  const scoreData = [
-    { name: 'Score', value: result.score },
-    { name: 'Remaining', value: 100 - result.score }
-  ];
+  const ScoreDonut = ({ score, label, color }: { score: number, label: string, color: string }) => {
+    const data = [{ value: score }, { value: 100 - score }];
+    return (
+      <div className="flex flex-col items-center">
+        <div className="h-40 w-40 relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={65} startAngle={90} endAngle={-270} dataKey="value" stroke="none">
+                <Cell key="score" fill={color} />
+                <Cell key="rest" fill="#f1f5f9" />
+                <Label value={`${score}%`} position="center" style={{ fontSize: '1.5rem', fontWeight: '800', fill: '#1e293b' }} />
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">{label}</span>
+      </div>
+    );
+  };
 
   return (
-    <div className="animate-fade-in-up space-y-8">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8">
       
-      {/* Top Section: Score and Summary */}
+      {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Score Card */}
-        <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm">
-          <h3 className="text-slate-500 font-medium mb-4 uppercase tracking-wider text-sm">Resume Score</h3>
-          <div className="h-48 w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={scoreData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  startAngle={90}
-                  endAngle={-270}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  <Cell key="score" fill={getScoreColor(result.score)} />
-                  <Cell key="rest" fill="#e2e8f0" />
-                  <Label 
-                    value={`${result.score}`} 
-                    position="center" 
-                    className="text-4xl font-bold fill-slate-800"
-                    style={{ fontSize: '2.5rem', fontWeight: '800' }} 
-                  />
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 mt-8 text-xs font-medium text-slate-400">
-              / 100
-            </div>
-          </div>
-          <p className="mt-2 text-sm text-slate-500">
-            {result.score >= 80 ? 'Excellent job!' : result.score >= 60 ? 'Good start, needs polish.' : 'Needs significant improvement.'}
-          </p>
+        <div className="glass-panel p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+          <ScoreDonut score={result.score} label="Profile Strength" color={getScoreColor(result.score)} />
+        </div>
+        
+        <div className="glass-panel p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+          <ScoreDonut score={result.matchScore || 0} label="Job Alignment" color="#6366f1" />
         </div>
 
-        {/* Summary Card */}
-        <div className="glass-panel p-6 rounded-2xl md:col-span-2 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-4 text-indigo-600">
-              <Award size={20} />
-              <h3 className="font-semibold text-lg">Executive Summary</h3>
+        <div className="glass-panel p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-indigo-600">
+              <Briefcase size={20} />
+              <h3 className="font-bold">Target Role</h3>
             </div>
-            <p className="text-slate-600 leading-relaxed text-sm md:text-base">
-              {result.summary}
+            <p className="text-2xl font-bold text-slate-800 leading-tight">
+              {result.roleMatch || "General Professional"}
             </p>
           </div>
-          
-          <div className="mt-6 pt-6 border-t border-slate-100">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <Target size={14} /> Identified Skills
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {result.skillsFound.map((skill, idx) => (
-                <span key={idx} className="px-3 py-1 bg-slate-100 text-slate-600 text-xs rounded-full font-medium border border-slate-200">
-                  {skill}
-                </span>
-              ))}
-            </div>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {result.skillsFound.slice(0, 3).map((s, i) => (
+              <span key={i} className="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-bold whitespace-nowrap">#{s}</span>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Strengths & Weaknesses Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Strengths */}
-        <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-6">
-          <h3 className="flex items-center gap-2 text-emerald-700 font-semibold mb-4 text-lg">
-            <CheckCircle2 size={24} />
-            Strengths
-          </h3>
-          <ul className="space-y-3">
-            {result.strengths.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-3 text-emerald-900 text-sm">
-                <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Col: Summary & Skills */}
+        <div className="lg:col-span-2 space-y-8">
+          <section className="glass-panel p-8 rounded-3xl shadow-sm border border-slate-200">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Award className="text-amber-500" /> Executive Analysis
+            </h3>
+            <p className="text-slate-600 leading-relaxed text-lg italic">"{result.summary}"</p>
+          </section>
 
-        {/* Weaknesses */}
-        <div className="bg-red-50/50 border border-red-100 rounded-2xl p-6">
-          <h3 className="flex items-center gap-2 text-red-700 font-semibold mb-4 text-lg">
-            <XCircle size={24} />
-            Areas for Improvement
-          </h3>
-          <ul className="space-y-3">
-            {result.weaknesses.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-3 text-red-900 text-sm">
-                <span className="mt-1 h-2 w-2 rounded-full bg-red-400 flex-shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Action Plan */}
-      <div className="glass-panel rounded-2xl p-8 border-l-4 border-l-indigo-500 shadow-md">
-        <h3 className="flex items-center gap-2 text-slate-800 font-bold text-xl mb-6">
-          <BookOpen size={24} className="text-indigo-500" />
-          Recommended Actions
-        </h3>
-        <div className="space-y-4">
-          {result.improvements.map((action, idx) => (
-            <div key={idx} className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                {idx + 1}
-              </div>
-              <p className="text-slate-700 pt-1 leading-relaxed">
-                {action}
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-emerald-50/50 border border-emerald-100 rounded-3xl p-6">
+              <h4 className="flex items-center gap-2 text-emerald-700 font-bold mb-4">
+                <CheckCircle2 size={20} /> Highlighted Strengths
+              </h4>
+              <ul className="space-y-3">
+                {result.strengths.map((s, i) => (
+                  <li key={i} className="flex gap-3 text-sm text-emerald-800">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" /> {s}
+                  </li>
+                ))}
+              </ul>
             </div>
-          ))}
+            <div className="bg-rose-50/50 border border-rose-100 rounded-3xl p-6">
+              <h4 className="flex items-center gap-2 text-rose-700 font-bold mb-4">
+                {/* Fixed: Added missing AlertCircle import from lucide-react */}
+                <AlertCircle size={20} /> Missing Elements
+              </h4>
+              <ul className="space-y-3">
+                {result.weaknesses.map((w, i) => (
+                  <li key={i} className="flex gap-3 text-sm text-rose-800">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> {w}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Col: Action Plan */}
+        <div className="space-y-6">
+          <section className="bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+            <Zap className="absolute -top-4 -right-4 w-24 h-24 text-white/5 rotate-12" />
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 relative z-10">
+              <BookOpen size={20} className="text-indigo-400" /> Improvement Plan
+            </h3>
+            <div className="space-y-6 relative z-10">
+              {result.improvements.map((item, i) => (
+                <div key={i} className="flex gap-4 group">
+                  <div className="shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-[10px] flex items-center justify-center font-black">
+                    0{i+1}
+                  </div>
+                  <p className="text-sm text-slate-300 group-hover:text-white transition-colors">{item}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {result.keywordGaps && result.keywordGaps.length > 0 && (
+            <div className="glass-panel p-6 rounded-3xl border border-amber-100 bg-amber-50/20">
+              <h4 className="flex items-center gap-2 text-amber-700 font-bold mb-3 text-sm">
+                <Search size={16} /> Keyword Gaps
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {result.keywordGaps.map((k, i) => (
+                  <span key={i} className="bg-white border border-amber-200 text-amber-600 px-3 py-1 rounded-full text-xs font-medium">
+                    {k}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex justify-center pt-8">
         <button 
           onClick={onReset}
-          className="px-8 py-3 bg-slate-900 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+          className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
-          Analyze Another Resume
+          Analyze Another Candidate
         </button>
       </div>
-
     </div>
   );
 };
